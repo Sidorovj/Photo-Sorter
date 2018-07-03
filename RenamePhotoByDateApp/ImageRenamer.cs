@@ -1,6 +1,7 @@
 ﻿using MetadataExtractor;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -98,18 +99,22 @@ namespace RenamePhotoByDateApp
             private const int CreatedOnPropertyId = 36867;
             public DateTime GetDateTakenFromImage(string path)
             {
-                IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(path);
-                foreach (var directory in directories)
+                try
                 {
-                    if (directory.Name != "Exif IFD0")
-                        continue;
-                    foreach (var tag in directory.Tags)
+                    IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(path);
+                    foreach (var directory in directories)
                     {
-                        if (tag.Name != "Date/Time")
+                        if (directory.Name != "Exif IFD0")
                             continue;
-                        return DateTime.Parse(GetStringCorrectDate(tag.Description));
+                        foreach (var tag in directory.Tags)
+                        {
+                            if (tag.Name != "Date/Time")
+                                continue;
+                            return DateTime.Parse(GetStringCorrectDate(tag.Description));
+                        }
                     }
                 }
+                catch(Exception er) { Debug.WriteLine(path + "\r\n" + er.ToString()); }
 
                 try
                 {
@@ -128,7 +133,7 @@ namespace RenamePhotoByDateApp
                             }
                         }
                 }
-                catch { }
+                catch (Exception er) { Debug.WriteLine(path + "\r\n" + er.ToString()); }
 
                 DateTime creation = File.GetCreationTime(path);
                 DateTime modification = File.GetLastWriteTime(path);
